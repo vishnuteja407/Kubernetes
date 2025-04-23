@@ -1,0 +1,95 @@
+Kubernetes
+
+
+minikube start --driver=docker
+
+kubectl cluster-info
+
+kubectl get nodes
+
+kubectl describe node <node-name>
+
+kubectl create deployment hello-minikube --image=kicbase/echo-server:1.0
+
+kubectl get deployments
+
+kubectl expose deployment hello-minikube --type=NodePort --port=8080
+
+kubectl get services hello-minikube
+
+minikube service hello-minikube
+
+kubectl port-forward service/hello-minikube 7080:8080
+
+kubectl delete services hello-minikube
+
+kubectl delete deployment hello-minikube
+
+kubectl run nginx --image=nginx
+
+kubectl describe pod nginx
+
+kubectl get pods -o wide
+
+kubectl apply -f <your-config-file>.yaml --save-config     ----> create pod
+
+kubectl run redis --image=redis123 --dry-run=client -o yaml > redis.yml
+
+kubectl explain replicaset
+
+kubectl get replicaset
+
+kubetl delete replicaset myapp-replicaset
+
+kubectl replace -f replicaset-definition.yml  ---> To increase replicas of exisiting pods
+
+kubectl scale --replicas=6 replicaset-definition.yml
+
+kubectl scale replicaset myapp-replicaset --replicas=2
+
+kubectl get all
+
+kubectl get deployments
+
+kubectl describe deployment myapp-deployment
+
+kubectl create deployment httpd-frontend --image=httpd:2.4-alpine --replicas=3
+
+kubectl rollout status deployments/myapp-deployment  --> rollout status
+
+Waiting for deployment "myapp-deployment" rollout to finish: 3 of 6 updated replicas are available...
+Waiting for deployment "myapp-deployment" rollout to finish: 4 of 6 updated replicas are available...
+Waiting for deployment "myapp-deployment" rollout to finish: 5 of 6 updated replicas are available...
+deployment "myapp-deployment" successfully rolled out
+
+kubectl rollout history deployments/myapp-deployment
+
+deployment.apps/myapp-deployment 
+REVISION  CHANGE-CAUSE
+1         <none>
+
+kubectl create -f deployments/deployment.yml  --record
+
+kubectl rollout history deployments/myapp-deployment
+
+deployment.apps/myapp-deployment 
+REVISION  CHANGE-CAUSE
+1         kubectl create --filename=deployments/deployment.yml --record=true
+
+kubectl set image deployment/myapp-deployment nginx-container=nginx:1.9.1    ---> update deployments
+
+kubectl set image deploy <deployment-name> <container-name>=<image-name>
+
+kubectl rollout undo deployments/myapp-deployment   -----> Rollback deployment
+
+kubectl create -f service-definition.yml
+
+kubectl get svc or kubectl get service
+
+minikube service myapp-service --url   ----> To get service url for checking in browser
+
+kubectl get pods,svc
+
+minikube service voting-service --url
+
+kubectl logs worker-app-pod -c worker-app
