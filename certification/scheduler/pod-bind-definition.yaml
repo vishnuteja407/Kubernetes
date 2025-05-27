@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Binding
+metadata:
+  name: nginx
+target:
+  apiVersion: v1
+  kind: Node
+  name: node02
+
+
+# used for assigning a node to existing pod
+# Need to hit kubernetes binding API with above code as payload

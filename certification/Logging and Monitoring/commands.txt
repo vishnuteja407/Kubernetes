@@ -1,0 +1,23 @@
+Metrics Server
+---------------
+minikube addons enable metrics-server
+ or 
+git clone https://github.com/kubernetes-sigs/metrics-server.git
+
+Metrics Server can be installed either directly from YAML manifest or via the official Helm chart. To install the latest Metrics Server release from the components.yaml manifest, run the following command.
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+Metrics Server can be installed in high availability mode directly from a YAML manifest or via the official Helm chart by setting the replicas value greater than 1. To install the latest Metrics Server release in high availability mode from the high-availability.yaml manifest, run the following command.
+
+On Kubernetes v1.21+:
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml
+
+On Kubernetes v1.19-1.21:
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability.yaml
+
+Note
+
+This configuration requires having a cluster with at least 2 nodes on which Metrics Server can be scheduled.
+Also, to maximize the efficiency of this highly available configuration, it is recommended to add the --enable-aggregator-routing=true CLI flag to the kube-apiserver so that requests sent to Metrics Server are load balanced between the 2 instances.

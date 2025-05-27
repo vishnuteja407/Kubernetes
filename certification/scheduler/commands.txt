@@ -1,0 +1,142 @@
+Scheduler
+----------
+
+kubectl get componentstatuses - gives status of kubernetes
+NAME                 STATUS      MESSAGE                                                                                        ERROR
+scheduler            Unhealthy   Get "https://127.0.0.1:10259/healthz": dial tcp 127.0.0.1:10259: connect: connection refused   
+controller-manager   Healthy     ok                                                                                             
+etcd-0               Healthy     ok 
+
+kubectl get pods --selector app=App1
+kubectl get all --selector env=prod
+kubectl get all --selector env=prod,bu=finance,tier=frontend
+
+
+Taints and Tolerations
+------------------------
+Taints are set on nodes while tolerations are set on pods
+kubectl taint nodes node-name key=value:taint-effect
+There are 3 taint effects NoSchedule, PreferNoSchedule, NoExecute
+kubectl taint nodes node1 app=blue:NoSchedule
+kubectl describe node kubemaster | grep Taint
+kubectl describe node node01 | grep -i taints
+kubectl taint nodes controlplane  node-role.kubernetes.io/control-plane:NoSchedule-     ----> untaint node
+
+Node selector
+-------------
+kubectl label nodes <node-name> <label-key>=<label-value>   -----> Labels nodes
+kubectl label nodes node01 size=Large
+kubectl describe node node01
+
+Node Affinity
+-------------
+2 types
+requiredDuringSchedulingIgnoredDuringExecution
+preferredDuringSchedulingIgnoredDuringExecution
+
+Daemon Sets 
+------------
+created by kube-apiserver
+Ignore bt kube-scheduler
+Daemon sets are similar to replica set as it helps to deploy multiple instances of pod but it runs 1 copy of pod in each node of cluster.
+Whenever a new node is added to cluster a replica of pod is automatically created on node
+Use cases
+Monitoring solution 
+logs viewer
+
+kubectl get daemonsets
+kubectl get daemonsets --all-namespaces
+kubectl describe daemonset kube-proxy --namespace=kube-system
+kubectl describe daemonset kube-flannel-ds --namespace=kube-flannel
+kubectl create deployment elasticsearch --image=registry.k8s.io/fluentd-elasticsearch:1.20 -n kube-system --dry-run=client -o yaml > fluentd.yaml
+
+Static pods
+-----------
+Kubelet relies on kube-apiserver for instructions on what pods to load on it's node which was a decision made by kube-scheduler which was stored in the ETCD datastore
+Let's say there is no master node and other nodes at all
+kubelet can manage a node indepedently
+kubelet knows how to create pods but we don't have apiserver to provide pod details but we know to create a pod we need pod details in pod definition file
+we can configure kubelet to read the pod def file from the dir on the server designated to store pod definition files
+Kubelet periodically checks this dir for files and read them and creates pods. If pod def file is removed from location then kubectl will terminate pod
+Pods created by kubelet without intervention of apiserver or rest of kubernetes components are called static pods
+
+Need to specify path in kubelet service file 
+kubelet.service
+--pod-manifest-path=/etc/kubernetes/manifests
+another option
+
+--config=kubeconfig.yaml
+
+kubeconfig.yaml
+staticPodPath: /etc/kubernetes/manifests
+
+ps -aux | grep kubelet   -> get kubelet config
+static pods are viewed using docker ps command
+
+when kubelet creates static pod if it's part of cluster then it will make mirror image of pod in kube-apiserver. We can not delete pod from server using kube-apiserver
+UseCase
+
+used for deploying control plane components like apiserver, etcd, controller-manager as pods on master by deploying kubelet service on master node
+
+
+Priority Classes
+----------------
+helps defining priority for different work loads so that higher priority workloadsd always get a priority compared to lower ones
+terminates lower priority jobs if resources are not available for higher priority workloads
+priorities range is 1,000,000,000 to -2,147,483,648 for apps
+priorities range is 1,000,000,000 to 2,000,000,000  for system
+
+kubectl get priorityclass
+
+If priority class is not defined in pod by default it is assumed to have priority value of value zero.
+If we give globaDefault to true in priorityclass then it wil be applied by default to all pods
+globaDefault can only be definied in single priority class
+
+kubectl get pods -o custom-columns="NAME:.metadata.name,PRIORITY:.spec.priorityClassName"
+
+Multiple Scheduler
+-----------------
+kubectl get pods --namespace=kube-system
+kubectl get events -o wide
+kubectl logs my-custom-scheduler --name-space=kube-system
+kubectl get serviceaccount -n kube-system
+kubectl get clusterrolebinding
+
+Configuring Scheduler Profiles
+-------------------------------
+Phases for creating pod in 4 phases
+Scheduling queue - based on priority
+Filtering - nodes that can not run will be filtered out
+Scoring - Based on the free space in nodes after reserving resources required for pod
+Binding - pod bound to node with high score
+
+plugins used in each phase are
+1. PrioritySort
+2. NodeResourcesFit, NodeName, NodeUnschedulable
+3. NodeResourcesFit, ImageLocality
+4. DefaultBinder
+
+Extension points used in each phase are
+1. queueSort
+2. preFilter, filter, postFilter
+3. preScore, score, reserve
+4. permit, preBind, bind, postBind
+
+Admission Controllers
+----------------------
+Helps implement better security measures to enforce how a cluster is used
+prebuilt Admission controllers are AlwaysPullImages, DefaultStorageClass, EventRateExists, NamespaceExists, NamespaceAutoProvision and more
+
+kube-apiserver -h | grep enable-admission-plugins -> to get default enabled Admission controller
+
+cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep enable-admission-plugins
+ps -ef | grep kube-apiserver | grep admission-plugins
+
+Mutating Admission controllers   eg: NamespaceAutoProvision 
+validating admission controllers  eg: NamespaceExists
+
+kubectl -n webhook-demo create secret tls webhook-server-tls \
+    --cert "/root/keys/webhook-server-tls.crt" \
+    --key "/root/keys/webhook-server-tls.key"
+
+kubectl get po pod-with-defaults -o yaml | grep -A2 " securityContext:"
